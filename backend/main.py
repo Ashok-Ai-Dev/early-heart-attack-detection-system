@@ -195,8 +195,6 @@ def find_healthcare(location: LocationRequest):
             return []
 
     import urllib.parse
-    cardiologists = fetch_osm(query_doctors, 'Unknown Clinic', 'cardiologist')
-    
     top_hospitals = [
         {"name": "All India Institute of Medical Sciences (AIIMS)", "address": "New Delhi, India", "rating": 4.9, "map_link": "https://www.google.com/maps/search/?api=1&query=AIIMS+Hospital"},
         {"name": "Fortis Escorts Heart Institute", "address": "Okhla, New Delhi", "rating": 4.8, "map_link": "https://www.google.com/maps/search/?api=1&query=Fortis+Escorts+Heart+Institute"},
@@ -207,14 +205,16 @@ def find_healthcare(location: LocationRequest):
         {"name": "Max Super Speciality Hospital", "address": "Saket, New Delhi", "rating": 4.6, "map_link": "https://www.google.com/maps/search/?api=1&query=Max+Super+Speciality+Hospital"}
     ]
     
-    if not cardiologists:
-        cardiologists = [
-            {"name": "Heart Center Clinic", "address": "Medical District", "rating": 4.8, "map_link": f"https://www.google.com/maps/search/?api=1&query=cardiologist+{location.lat},{location.lng}"},
-            {"name": "Elite Cardiology", "address": "Downtown", "rating": 4.6, "map_link": f"https://www.google.com/maps/search/?api=1&query=cardiologist+{location.lat},{location.lng}"}
-        ]
+    top_cardiologists = [
+        {"name": "Dr. Naresh Trehan", "address": "Medanta – The Medicity", "rating": 4.9, "map_link": "https://www.google.com/maps/search/?api=1&query=Dr+Naresh+Trehan+Medanta"},
+        {"name": "Dr. Ashok Seth", "address": "Fortis Escorts Heart Institute", "rating": 4.9, "map_link": "https://www.google.com/maps/search/?api=1&query=Dr+Ashok+Seth+Fortis"},
+        {"name": "Dr. Devi Shetty", "address": "Narayana Health", "rating": 5.0, "map_link": "https://www.google.com/maps/search/?api=1&query=Dr+Devi+Shetty+Narayana"},
+        {"name": "Dr. Ramakanta Panda", "address": "Asian Heart Institute", "rating": 4.8, "map_link": "https://www.google.com/maps/search/?api=1&query=Dr+Ramakanta+Panda+Asian+Heart"},
+        {"name": "Dr. K. M. Cherian", "address": "Frontier Lifeline Hospital", "rating": 4.8, "map_link": "https://www.google.com/maps/search/?api=1&query=Dr+KM+Cherian"}
+    ]
         
     return {
-        "cardiologists": cardiologists[:5],
+        "cardiologists": top_cardiologists,
         "hospitals": top_hospitals
     }
 
