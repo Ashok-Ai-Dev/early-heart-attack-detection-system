@@ -9,25 +9,24 @@ import os
 import contextlib
 import jwt
 from datetime import datetime, timedelta
-from passlib.context import CryptContext
+import hashlib
 
 # Auth Configuration
 SECRET_KEY = "supersecretkey" # Use env variables in production
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 # In-Memory DB
 users_db = {}
 history_db = {}
 
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+def get_password_hash(password: str) -> str:
+    return hashlib.sha256(password.encode()).hexdigest()
 
-def get_password_hash(password):
-    return pwd_context.hash(password)
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return get_password_hash(plain_password) == hashed_password
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
@@ -65,7 +64,7 @@ app = FastAPI(title="Heart Attack Prediction API", lifespan=lifespan)
 # Setup CORS for Frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://0.0.0.0:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -125,6 +124,12 @@ def predict_risk(request: PredictionRequest, username: str = Depends(get_current
         
     # Recommendations Logic
     suggestions = []
+    
+    if risk_level == "High":
+        suggestions.append("🚨 URGENT: Your risk level is HIGH. Please consult a Cardiologist or healthcare professional immediately.")
+    elif risk_level == "Medium":
+        suggestions.append("⚠️ NOTICE: Your risk level is elevated. Consider scheduling a checkup with your doctor soon.")
+
     if req_data.get('smoking', '').lower() == 'yes' or req_data.get('alcohol', '').lower() == 'yes':
         suggestions.append("Quitting smoking and alcohol can reduce heart attack risk by up to 20%.")
     if req_data.get('bmi', 0) > 25:
