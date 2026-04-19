@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { predictRisk, getHistory } from '../services/api';
+import { predictRisk, getHistory, findHealthcare } from '../services/api';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 
@@ -17,6 +17,10 @@ const Dashboard = ({ setAuth }) => {
   
   const [historyItems, setHistoryItems] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
+  
+  const [facilities, setFacilities] = useState(null);
+  const [loadingFacilities, setLoadingFacilities] = useState(false);
+  const [locationError, setLocationError] = useState('');
   
   const printRef = useRef();
 
@@ -76,6 +80,33 @@ const Dashboard = ({ setAuth }) => {
     // CSS @media print handles the layout to only show the result.
     window.print();
   };
+
+  const handleFindHealthcare = () => {
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by your browser.");
+      return;
+    }
+    setLoadingFacilities(true);
+    setLocationError('');
+    
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const res = await findHealthcare(position.coords.latitude, position.coords.longitude);
+          setFacilities(res);
+        } catch (err) {
+          setLocationError("Failed to fetch healthcare facilities.");
+        } finally {
+          setLoadingFacilities(false);
+        }
+      },
+      (err) => {
+        setLocationError("Location access denied. Please enable location permissions.");
+        setLoadingFacilities(false);
+      }
+    );
+  };
+
 
   const chartData = result ? {
     labels: ['Risk Probability Data', 'Safe'],
@@ -269,6 +300,93 @@ const Dashboard = ({ setAuth }) => {
             </div>
           )}
         </div>
+        )}
+      </div>
+
+      {/* Facilities Section */}
+      <div className="max-w-6xl mx-auto mt-8 bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 border-b border-gray-700 pb-4">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-200">Nearby Healthcare Facilities</h2>
+            <p className="text-sm text-gray-400 mt-1">
+              Find cardiologists and hospitals based on your current location.
+            </p>
+          </div>
+          <button 
+            onClick={handleFindHealthcare} 
+            disabled={loadingFacilities}
+            className="mt-4 md:mt-0 px-6 py-3 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white font-bold rounded-lg shadow transition"
+          >
+            {loadingFacilities ? 'Searching...' : 'Find Doctors & Hospitals Near Me'}
+          </button>
+        </div>
+
+        {locationError && (
+          <div className="bg-red-900/30 border border-red-800 text-red-400 p-4 rounded-lg mb-6 text-center">
+            {locationError}
+          </div>
+        )}
+
+        {loadingFacilities && (
+          <div className="flex justify-center items-center py-12">
+            <svg className="animate-spin h-10 w-10 text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span className="ml-3 text-emerald-400 font-semibold">Locating nearby facilities...</span>
+          </div>
+        )}
+
+        {facilities && !loadingFacilities && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-xl font-bold text-teal-400 mb-4 flex items-center">
+                <span className="text-2xl mr-2">👨‍⚕️</span> Cardiologists Near You
+              </h3>
+              {facilities.cardiologists?.length > 0 ? (
+                <div className="space-y-4">
+                  {facilities.cardiologists.map((doc, idx) => (
+                    <div key={idx} className="bg-gray-700/50 p-5 rounded-xl border border-gray-600 flex flex-col justify-between">
+                      <div>
+                        <h4 className="font-bold text-lg text-white">{doc.name}</h4>
+                        <p className="text-gray-400 text-sm mt-1">{doc.address}</p>
+                        <p className="text-yellow-400 font-bold text-sm mt-2">⭐ {doc.rating} / 5.0</p>
+                      </div>
+                      <a href={doc.map_link} target="_blank" rel="noreferrer" className="mt-4 bg-gray-600 hover:bg-gray-500 text-center py-2 rounded text-sm font-semibold transition">
+                        Open in Google Maps
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 italic">No cardiologists found nearby.</p>
+              )}
+            </div>
+
+            <div>
+              <h3 className="text-xl font-bold text-blue-400 mb-4 flex items-center">
+                <span className="text-2xl mr-2">🏥</span> Hospitals Near You
+              </h3>
+              {facilities.hospitals?.length > 0 ? (
+                <div className="space-y-4">
+                  {facilities.hospitals.map((hosp, idx) => (
+                    <div key={idx} className="bg-gray-700/50 p-5 rounded-xl border border-gray-600 flex flex-col justify-between">
+                      <div>
+                        <h4 className="font-bold text-lg text-white">{hosp.name}</h4>
+                        <p className="text-gray-400 text-sm mt-1">{hosp.address}</p>
+                        <p className="text-yellow-400 font-bold text-sm mt-2">⭐ {hosp.rating} / 5.0</p>
+                      </div>
+                      <a href={hosp.map_link} target="_blank" rel="noreferrer" className="mt-4 bg-gray-600 hover:bg-gray-500 text-center py-2 rounded text-sm font-semibold transition">
+                        Open in Google Maps
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 italic">No hospitals found nearby.</p>
+              )}
+            </div>
+          </div>
         )}
       </div>
     </div>

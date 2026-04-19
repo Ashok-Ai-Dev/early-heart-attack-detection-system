@@ -44,4 +44,9 @@ export const getHistory = async () => {
   return response.data;
 };
 
+export const findHealthcare = async (lat, lng) => {
+  const response = await api.post('/find-healthcare', { lat, lng });
+  return response.data;
+};
+
 export default api;
