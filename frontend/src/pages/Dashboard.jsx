@@ -71,17 +71,31 @@ const Dashboard = ({ setAuth }) => {
     }
   };
 
-  const handleDownloadPDF = () => {
-    const element = printRef.current;
-    if (!element) return;
-    const opt = {
-      margin:       1,
-      filename:     'CardioCare-Report.pdf',
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2 },
-      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-    };
-    html2pdf().set(opt).from(element).save();
+  const handleDownloadPDF = async () => {
+    try {
+      const element = printRef.current;
+      if (!element) return;
+      
+      const opt = {
+        margin:       0.5,
+        filename:     'CardioCare-Report.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+      
+      // Handle Vite ESM import quirks
+      let html2pdfFunc = html2pdf;
+      if (typeof html2pdf !== 'function' && html2pdf.default) {
+        html2pdfFunc = html2pdf.default;
+      }
+      
+      html2pdfFunc().set(opt).from(element).save();
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+      alert("PDF download encountered an issue. Using standard print dialog as fallback.");
+      window.print();
+    }
   };
 
   const chartData = result ? {
