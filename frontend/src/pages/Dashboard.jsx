@@ -71,30 +71,10 @@ const Dashboard = ({ setAuth }) => {
     }
   };
 
-  const handleDownloadPDF = async () => {
-    try {
-      const element = printRef.current;
-      if (!element) return;
-      
-      const opt = {
-        margin:       0.5,
-        filename:     `CardioCare-Report-${result?.name || 'Patient'}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
-        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-      };
-      
-      // Use global CDN script to avoid Vite module destruction
-      if (window.html2pdf) {
-        window.html2pdf().set(opt).from(element).save();
-      } else {
-        window.print();
-      }
-    } catch (err) {
-      console.error("PDF generation failed:", err);
-      alert("Error generating PDF. Opening standard print window instead!");
-      window.print();
-    }
+  const handleDownloadPDF = () => {
+    // We use robust native browser printing which supports 'Save as PDF' effortlessly.
+    // CSS @media print handles the layout to only show the result.
+    window.print();
   };
 
   const chartData = result ? {
@@ -237,7 +217,7 @@ const Dashboard = ({ setAuth }) => {
 
           {result && (
             <div className="w-full animate-fade-in-up">
-              <div ref={printRef} className="bg-gray-800 p-4">
+              <div ref={printRef} className="bg-gray-800 p-4 print-container text-white">
                 <h2 className="text-3xl font-bold text-center mb-8 tracking-tight">Analysis Result for {result.name}</h2>
                 
                 <div className="flex flex-col items-center justify-center mb-8 relative">

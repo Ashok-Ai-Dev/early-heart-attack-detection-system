@@ -13,3 +13,30 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-container, .print-container * {
+    visibility: visible;
+  }
+  .print-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 20px;
+    background-color: white !important;
+    color: black !important;
+  }
+  /* Force dark mode aspects to look good on white paper */
+  .text-white { color: black !important; }
+  .text-emerald-400 { color: #059669 !important; }
+  .text-blue-400 { color: #2563eb !important; }
+  .bg-gray-800 { background: white !important; border: none !important; }
+  .bg-gray-700\/50 { background: #f3f4f6 !important; border: 1px solid #e5e7eb !important; }
+  /* Hide the download PDF button itself from the printout */
+  button { display: none !important; }
+}
