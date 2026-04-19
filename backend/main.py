@@ -195,15 +195,18 @@ def find_healthcare(location: LocationRequest):
             return []
 
     import urllib.parse
-    hospitals = fetch_osm(query_hospitals, 'Unknown Hospital', 'hospital')
     cardiologists = fetch_osm(query_doctors, 'Unknown Clinic', 'cardiologist')
     
-    # Fallback mock data if API limits or zero results
-    if not hospitals:
-        hospitals = [
-            {"name": "City Care Hospital", "address": "General Area", "rating": 4.5, "map_link": f"https://www.google.com/maps/search/?api=1&query=hospital+{location.lat},{location.lng}"},
-            {"name": "Metro Health Center", "address": "Central District", "rating": 4.2, "map_link": f"https://www.google.com/maps/search/?api=1&query=hospital+{location.lat},{location.lng}"}
-        ]
+    top_hospitals = [
+        {"name": "All India Institute of Medical Sciences (AIIMS)", "address": "New Delhi, India", "rating": 4.9, "map_link": "https://www.google.com/maps/search/?api=1&query=AIIMS+Hospital"},
+        {"name": "Fortis Escorts Heart Institute", "address": "Okhla, New Delhi", "rating": 4.8, "map_link": "https://www.google.com/maps/search/?api=1&query=Fortis+Escorts+Heart+Institute"},
+        {"name": "Apollo Hospitals", "address": "Multi-city (Delhi, Chennai, etc)", "rating": 4.7, "map_link": "https://www.google.com/maps/search/?api=1&query=Apollo+Hospitals"},
+        {"name": "Narayana Institute of Cardiac Sciences", "address": "Bengaluru, Karnataka", "rating": 4.8, "map_link": "https://www.google.com/maps/search/?api=1&query=Narayana+Institute+of+Cardiac+Sciences"},
+        {"name": "Medanta – The Medicity", "address": "Gurugram, Haryana", "rating": 4.7, "map_link": "https://www.google.com/maps/search/?api=1&query=Medanta+The+Medicity"},
+        {"name": "Asian Heart Institute", "address": "Bandra Kurla Complex, Mumbai", "rating": 4.9, "map_link": "https://www.google.com/maps/search/?api=1&query=Asian+Heart+Institute"},
+        {"name": "Max Super Speciality Hospital", "address": "Saket, New Delhi", "rating": 4.6, "map_link": "https://www.google.com/maps/search/?api=1&query=Max+Super+Speciality+Hospital"}
+    ]
+    
     if not cardiologists:
         cardiologists = [
             {"name": "Heart Center Clinic", "address": "Medical District", "rating": 4.8, "map_link": f"https://www.google.com/maps/search/?api=1&query=cardiologist+{location.lat},{location.lng}"},
@@ -212,7 +215,7 @@ def find_healthcare(location: LocationRequest):
         
     return {
         "cardiologists": cardiologists[:5],
-        "hospitals": hospitals[:5]
+        "hospitals": top_hospitals
     }
 
 
