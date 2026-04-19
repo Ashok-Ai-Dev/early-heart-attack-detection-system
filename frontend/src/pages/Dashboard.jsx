@@ -2,13 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { predictRisk, getHistory } from '../services/api';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
-import html2pdf from 'html2pdf.js';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 const Dashboard = ({ setAuth }) => {
   const [formData, setFormData] = useState({
-    age: '', gender: 1, cp: 0, trestbps: '', chol: '',
+    name: '', age: '', gender: 1, cp: 0, trestbps: '', chol: '',
     fbs: 0, bmi: '', exercise_level: 0, smoking: 'no', alcohol: 'no'
   });
   
@@ -50,6 +49,7 @@ const Dashboard = ({ setAuth }) => {
     setError(null);
     try {
       const formattedData = {
+        name: formData.name,
         age: Number(formData.age),
         gender: Number(formData.gender),
         cp: Number(formData.cp),
@@ -78,22 +78,21 @@ const Dashboard = ({ setAuth }) => {
       
       const opt = {
         margin:       0.5,
-        filename:     'CardioCare-Report.pdf',
+        filename:     `CardioCare-Report-${result?.name || 'Patient'}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true },
         jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
       };
       
-      // Handle Vite ESM import quirks
-      let html2pdfFunc = html2pdf;
-      if (typeof html2pdf !== 'function' && html2pdf.default) {
-        html2pdfFunc = html2pdf.default;
+      // Use global CDN script to avoid Vite module destruction
+      if (window.html2pdf) {
+        window.html2pdf().set(opt).from(element).save();
+      } else {
+        window.print();
       }
-      
-      html2pdfFunc().set(opt).from(element).save();
     } catch (err) {
       console.error("PDF generation failed:", err);
-      alert("PDF download encountered an issue. Using standard print dialog as fallback.");
+      alert("Error generating PDF. Opening standard print window instead!");
       window.print();
     }
   };
@@ -132,6 +131,10 @@ const Dashboard = ({ setAuth }) => {
         <div className="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
           <h2 className="text-xl font-bold mb-6 text-gray-200 border-b border-gray-700 pb-2">Health Metrics</h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="md:col-span-2">
+              <label className="block text-sm text-gray-400 mb-1">Patient Name</label>
+              <input type="text" name="name" required value={formData.name} onChange={handleChange} className="w-full p-2.5 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-blue-500 text-white" />
+            </div>
             <div>
               <label className="block text-sm text-gray-400 mb-1">Age</label>
               <input type="number" name="age" required value={formData.age} onChange={handleChange} className="w-full p-2.5 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-blue-500 text-white" />
@@ -235,7 +238,7 @@ const Dashboard = ({ setAuth }) => {
           {result && (
             <div className="w-full animate-fade-in-up">
               <div ref={printRef} className="bg-gray-800 p-4">
-                <h2 className="text-3xl font-bold text-center mb-8 tracking-tight">Analysis Result</h2>
+                <h2 className="text-3xl font-bold text-center mb-8 tracking-tight">Analysis Result for {result.name}</h2>
                 
                 <div className="flex flex-col items-center justify-center mb-8 relative">
                   <div className="w-48 h-48">

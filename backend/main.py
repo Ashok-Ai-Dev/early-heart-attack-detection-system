@@ -75,6 +75,7 @@ class UserCreate(BaseModel):
     password: str
 
 class PredictionRequest(BaseModel):
+    name: str = "Unknown Patient"
     age: float
     gender: int
     cp: int
@@ -142,6 +143,7 @@ def predict_risk(request: PredictionRequest, username: str = Depends(get_current
     diet = "Eat fruits (apple, banana), green vegetables, fiber-rich food. Avoid oily and high cholesterol food."
 
     result = {
+        "name": req_data.get('name', 'Unknown Patient'),
         "risk": risk_level,
         "probability": round(probability, 2),
         "suggestion": " | ".join(suggestions) if suggestions else "Maintain a healthy lifestyle.",
