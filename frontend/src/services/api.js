@@ -1,0 +1,47 @@
+import axios from 'axios';
+
+const API_URL = 'http://localhost:8000';
+
+const api = axios.create({
+  baseURL: API_URL,
+});
+
+// Add a request interceptor to add the JWT token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+export const login = async (username, password) => {
+  const params = new URLSearchParams();
+  params.append('username', username);
+  params.append('password', password);
+  
+  const response = await api.post('/login', params, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  });
+  return response.data;
+};
+
+export const signup = async (username, password) => {
+  const response = await api.post('/signup', { username, password });
+  return response.data;
+};
+
+export const predictRisk = async (data) => {
+  const response = await api.post('/predict', data);
+  return response.data;
+};
+
+export const getHistory = async () => {
+  const response = await api.get('/history');
+  return response.data;
+};
+
+export default api;
