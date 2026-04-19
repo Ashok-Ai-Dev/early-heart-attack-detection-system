@@ -220,6 +220,17 @@ const Dashboard = ({ setAuth }) => {
               <div ref={printRef} className="bg-gray-800 p-4 print-container text-white">
                 <h2 className="text-3xl font-bold text-center mb-8 tracking-tight">Analysis Result for {result.name}</h2>
                 
+                {result.risk === 'High' && (
+                  <div className="bg-red-900/50 border-l-4 border-red-500 p-6 rounded-lg mb-8 shadow-md">
+                    <h3 className="text-xl text-red-400 font-extrabold flex items-center mb-3">
+                      ⚠️ High Risk Detected!
+                    </h3>
+                    <p className="text-red-200 mb-2 font-semibold">You are at a high risk of heart attack.</p>
+                    <p className="text-gray-300 text-sm mb-2">It is strongly recommended that you consult a cardiologist immediately.</p>
+                    <p className="text-gray-300 text-sm italic border-t border-red-800/50 pt-2 mt-2">Early medical attention can help prevent serious complications.</p>
+                  </div>
+                )}
+                
                 <div className="flex flex-col items-center justify-center mb-8 relative">
                   <div className="w-48 h-48">
                     <Doughnut data={chartData} options={{ maintainAspectRatio: true }} />
