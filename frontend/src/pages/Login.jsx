@@ -3,8 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { login } from '../services/api';
 
 const Login = ({ setAuth }) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('admin');
+  const [password, setPassword] = useState('admin');
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
@@ -23,7 +23,7 @@ const Login = ({ setAuth }) => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
       <div className="bg-gray-800 p-8 rounded-xl shadow-lg w-full max-w-md border border-gray-700">
-        <h2 className="text-3xl font-bold mb-6 text-center text-blue-400">CardioCare Login</h2>
+        <h2 className="text-3xl font-bold mb-6 text-center text-blue-400">Early Heart Attack Detection System Login</h2>
         {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

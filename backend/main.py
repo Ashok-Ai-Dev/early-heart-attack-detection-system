@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 import pickle
@@ -12,6 +13,16 @@ from datetime import datetime, timedelta
 import hashlib
 import json
 import urllib.request
+from fastapi import BackgroundTasks
+from dotenv import load_dotenv
+
+load_dotenv()
+
+import sys
+sys.path.append(os.path.dirname(__file__))
+
+from utils.alert import send_alert
+from services.pdf_service import generate_risk_report_pdf
 # Auth Configuration
 SECRET_KEY = "supersecretkey" # Use env variables in production
 ALGORITHM = "HS256"
@@ -19,9 +30,24 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-# In-Memory DB
-users_db = {}
-history_db = {}
+# JSON DB Persistence
+DB_FILE = os.path.join(os.path.dirname(__file__), "database.json")
+
+def load_db():
+    if os.path.exists(DB_FILE):
+        try:
+            with open(DB_FILE, "r") as f:
+                data = json.load(f)
+                return data.get("users", {}), data.get("history", {})
+        except Exception:
+            pass
+    return {}, {}
+
+def save_db():
+    with open(DB_FILE, "w") as f:
+        json.dump({"users": users_db, "history": history_db}, f)
+
+users_db, history_db = load_db()
 
 def get_password_hash(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
@@ -77,6 +103,8 @@ class UserCreate(BaseModel):
 
 class PredictionRequest(BaseModel):
     name: str = "Unknown Patient"
+    email: str = ""
+    phone: str = ""
     age: float
     gender: int
     cp: int
@@ -97,6 +125,7 @@ def signup(user: UserCreate):
         "password": get_password_hash(user.password)
     }
     history_db[user.username] = []
+    save_db()
     return {"message": "User created successfully"}
 
 @app.post("/login")
@@ -109,7 +138,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
     return {"access_token": access_token, "token_type": "bearer"}
 
 @app.post("/predict")
-def predict_risk(request: PredictionRequest, username: str = Depends(get_current_user)):
+def predict_risk(request: PredictionRequest, background_tasks: BackgroundTasks, username: str = Depends(get_current_user)):
     if model is None:
         return {"error": "Model not loaded. Try restarting server."}
 
@@ -119,10 +148,21 @@ def predict_risk(request: PredictionRequest, username: str = Depends(get_current
     # Predict
     probability = model.predict_proba(df_processed)[0][1] * 100
     risk_level = "Low"
-    if probability > 66:
+    if probability > 70:
         risk_level = "High"
-    elif probability > 33:
+    elif probability > 50:
         risk_level = "Medium"
+        
+    if risk_level == "High":
+        if req_data.get("email"):
+            background_tasks.add_task(
+                send_alert,
+                user_email=req_data["email"],
+                risk_score=round(probability, 2),
+                risk_level=risk_level,
+                user_name=req_data.get("name", "User"),
+                user_phone=req_data.get("phone", "")
+            )
         
     # Recommendations Logic
     suggestions = []
@@ -155,6 +195,7 @@ def predict_risk(request: PredictionRequest, username: str = Depends(get_current
     # Save history
     if username in history_db:
         history_db[username].append(result)
+        save_db()
 
     return result
 
@@ -218,6 +259,27 @@ def find_healthcare(location: LocationRequest):
         "hospitals": top_hospitals
     }
 
+
+class ReportRequest(BaseModel):
+    name: str
+    age: float
+    gender: int
+    email: str
+    risk_percentage: float
+    risk_level: str
+    suggestions: list[str]
+
+@app.post("/generate-report")
+def generate_report(request: ReportRequest):
+    try:
+        pdf_buffer = generate_risk_report_pdf(request.dict())
+        return StreamingResponse(
+            pdf_buffer, 
+            media_type="application/pdf", 
+            headers={"Content-Disposition": f"attachment; filename=Heart_Risk_Report_{request.name}.pdf"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate PDF: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

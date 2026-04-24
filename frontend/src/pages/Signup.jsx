@@ -23,7 +23,7 @@ const Signup = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
       <div className="bg-gray-800 p-8 rounded-xl shadow-lg w-full max-w-md border border-gray-700">
-        <h2 className="text-3xl font-bold mb-6 text-center text-blue-400">Join CardioCare</h2>
+        <h2 className="text-3xl font-bold mb-6 text-center text-blue-400">Join Early Heart Attack Detection System</h2>
         {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
         {success && <p className="text-green-500 mb-4 text-center">{success}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">

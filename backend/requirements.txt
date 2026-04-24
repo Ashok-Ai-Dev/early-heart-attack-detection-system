@@ -5,3 +5,8 @@ xgboost
 pandas
 numpy
 pydantic
+twilio
+python-dotenv
+pyjwt
+python-multipart
+reportlab
