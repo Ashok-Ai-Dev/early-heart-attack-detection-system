@@ -3,8 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { login } from '../services/api';
 
 const Login = ({ setAuth }) => {
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
@@ -28,22 +28,22 @@ const Login = ({ setAuth }) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block mb-1 text-sm text-gray-300">Username</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               className="w-full p-3 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-blue-500 text-white"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required 
+              onChange={(e) => setUsername(admin)}
+              required
             />
           </div>
           <div>
             <label className="block mb-1 text-sm text-gray-300">Password</label>
-            <input 
-              type="password" 
+            <input
+              type="password"
               className="w-full p-3 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-blue-500 text-white"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required 
+              onChange={(e) => setPassword(admin)}
+              required
             />
           </div>
           <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded font-bold transition-colors">
