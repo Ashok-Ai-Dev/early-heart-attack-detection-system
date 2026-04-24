@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { predictRisk, getHistory, findHealthcare } from '../services/api';
+import { predictRisk, getHistory, findHealthcare, downloadReport } from '../services/api';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 
@@ -7,7 +7,7 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 
 const Dashboard = ({ setAuth }) => {
   const [formData, setFormData] = useState({
-    name: '', age: '', gender: 1, cp: 0, trestbps: '', chol: '',
+    name: '', email: '', phone: '', age: '', gender: 1, cp: 0, trestbps: '', chol: '',
     fbs: 0, bmi: '', exercise_level: 0, smoking: 'no', alcohol: 'no'
   });
   
@@ -23,6 +23,8 @@ const Dashboard = ({ setAuth }) => {
   const [locationError, setLocationError] = useState('');
   
   const printRef = useRef();
+  const [showAlert, setShowAlert] = useState(false);
+  const [downloadingPDF, setDownloadingPDF] = useState(false);
 
   useEffect(() => {
     fetchHistory();
@@ -54,6 +56,8 @@ const Dashboard = ({ setAuth }) => {
     try {
       const formattedData = {
         name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
         age: Number(formData.age),
         gender: Number(formData.gender),
         cp: Number(formData.cp),
@@ -67,6 +71,9 @@ const Dashboard = ({ setAuth }) => {
       };
       const res = await predictRisk(formattedData);
       setResult(res);
+      if (res.risk === 'High') {
+        setShowAlert(true);
+      }
       fetchHistory(); // refresh history
     } catch (err) {
       setError(err.response?.data?.detail || 'An error occurred during prediction.');
@@ -75,10 +82,35 @@ const Dashboard = ({ setAuth }) => {
     }
   };
 
-  const handleDownloadPDF = () => {
-    // We use robust native browser printing which supports 'Save as PDF' effortlessly.
-    // CSS @media print handles the layout to only show the result.
-    window.print();
+  const handleDownloadPDF = async () => {
+    if (!result) return;
+    setDownloadingPDF(true);
+    try {
+      const data = {
+        name: result.name || formData.name || 'Patient',
+        age: Number(formData.age) || 0,
+        gender: Number(formData.gender) || 0,
+        email: formData.email || '',
+        risk_percentage: result.probability,
+        risk_level: result.risk,
+        suggestions: result.suggestion.split(' | ')
+      };
+      
+      const blob = await downloadReport(data);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Heart_Risk_Report_${data.name}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+    } catch (err) {
+      alert("Failed to download PDF report. Please try again.");
+      console.error(err);
+    } finally {
+      setDownloadingPDF(false);
+    }
   };
 
   const handleFindHealthcare = () => {
@@ -122,12 +154,32 @@ const Dashboard = ({ setAuth }) => {
   } : null;
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-6">
+    <div className="min-h-screen bg-gray-900 text-white p-6 relative">
+      {/* Alert Modal */}
+      {showAlert && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-gray-800 border border-red-500 p-8 rounded-2xl shadow-2xl max-w-md text-center relative">
+            <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-4xl">🚨</span>
+            </div>
+            <h2 className="text-3xl font-extrabold text-white mb-2">High Risk!</h2>
+            <p className="text-gray-300 mb-6 text-lg">
+              High risk detected. Please check your email for details.
+            </p>
+            <button 
+              onClick={() => setShowAlert(false)}
+              className="bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition"
+            >
+              Acknowledge
+            </button>
+          </div>
+        </div>
+      )}
       <div className="max-w-6xl mx-auto flex justify-between items-center mb-8">
         <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
-          CardioCare AI
+          Early Heart Attack Detection System
         </h1>
-        <div className="space-x-4">
+        <div className="space-x-4 hide-on-print">
           <button onClick={() => setShowHistory(!showHistory)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-sm font-semibold transition-colors">
             {showHistory ? 'Hide History' : 'View History'}
           </button>
@@ -139,12 +191,20 @@ const Dashboard = ({ setAuth }) => {
 
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Form Section */}
-        <div className="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
+        <div className="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700 hide-on-print">
           <h2 className="text-xl font-bold mb-6 text-gray-200 border-b border-gray-700 pb-2">Health Metrics</h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="md:col-span-2">
               <label className="block text-sm text-gray-400 mb-1">Patient Name</label>
               <input type="text" name="name" required value={formData.name} onChange={handleChange} className="w-full p-2.5 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-blue-500 text-white" />
+            </div>
+            <div className="md:col-span-1">
+              <label className="block text-sm text-gray-400 mb-1">Email (Alerts)</label>
+              <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full p-2.5 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-blue-500 text-white" />
+            </div>
+            <div className="md:col-span-1">
+              <label className="block text-sm text-gray-400 mb-1">Phone</label>
+              <input type="tel" name="phone" value={formData.phone} onChange={handleChange} className="w-full p-2.5 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-blue-500 text-white" />
             </div>
             <div>
               <label className="block text-sm text-gray-400 mb-1">Age</label>
@@ -294,8 +354,8 @@ const Dashboard = ({ setAuth }) => {
                   </div>
                 </div>
               </div>
-              <button onClick={handleDownloadPDF} className="mt-6 w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg shadow transition">
-                Download Report as PDF
+              <button disabled={downloadingPDF} onClick={handleDownloadPDF} className={`mt-6 w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg shadow transition hide-on-print ${downloadingPDF ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                {downloadingPDF ? 'Generating PDF...' : 'Download Report as PDF'}
               </button>
             </div>
           )}
@@ -304,7 +364,7 @@ const Dashboard = ({ setAuth }) => {
       </div>
 
       {/* Facilities Section */}
-      <div className="max-w-6xl mx-auto mt-8 bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
+      <div className="max-w-6xl mx-auto mt-8 bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700 hide-on-print">
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 border-b border-gray-700 pb-4">
           <div>
             <h2 className="text-2xl font-bold text-gray-200">Nearby Healthcare Facilities</h2>
