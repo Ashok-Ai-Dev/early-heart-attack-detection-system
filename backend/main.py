@@ -100,6 +100,11 @@ app.add_middleware(
 class UserCreate(BaseModel):
     username: str
     password: str
+    name: str = ""
+    email: str = ""
+    phone: str = ""
+    age: float = 0
+    gender: int = 1
 
 class PredictionRequest(BaseModel):
     name: str = "Unknown Patient"
@@ -122,7 +127,12 @@ def signup(user: UserCreate):
         raise HTTPException(status_code=400, detail="Username already registered")
     users_db[user.username] = {
         "username": user.username,
-        "password": get_password_hash(user.password)
+        "password": get_password_hash(user.password),
+        "name": user.name,
+        "email": user.email,
+        "phone": user.phone,
+        "age": user.age,
+        "gender": user.gender
     }
     history_db[user.username] = []
     save_db()
@@ -202,6 +212,17 @@ def predict_risk(request: PredictionRequest, background_tasks: BackgroundTasks, 
 @app.get("/history")
 def get_history(username: str = Depends(get_current_user)):
     return {"history": history_db.get(username, [])}
+
+@app.get("/profile")
+def get_profile(username: str = Depends(get_current_user)):
+    user = users_db.get(username, {})
+    return {
+        "name": user.get("name", ""),
+        "email": user.get("email", ""),
+        "phone": user.get("phone", ""),
+        "age": user.get("age", 0) if user.get("age") else "",
+        "gender": user.get("gender", 1)
+    }
 
 class LocationRequest(BaseModel):
     lat: float

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL =  "https://early-heart-attack-detection-system.onrender.com";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 const api = axios.create({
   baseURL: API_URL,
 });
@@ -40,8 +40,13 @@ export const login = async (username, password) => {
   return response.data;
 };
 
-export const signup = async (username, password) => {
-  const response = await api.post('/signup', { username, password });
+export const signup = async (userData) => {
+  const response = await api.post('/signup', userData);
+  return response.data;
+};
+
+export const getProfile = async () => {
+  const response = await api.get('/profile');
   return response.data;
 };
 

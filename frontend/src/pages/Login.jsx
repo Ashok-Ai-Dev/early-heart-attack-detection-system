@@ -32,7 +32,7 @@ const Login = ({ setAuth }) => {
               type="text"
               className="w-full p-3 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-blue-500 text-white"
               value={username}
-              onChange={(e) => setUsername(admin)}
+              onChange={(e) => setUsername(e.target.value)}
               required
             />
           </div>
@@ -42,7 +42,7 @@ const Login = ({ setAuth }) => {
               type="password"
               className="w-full p-3 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-blue-500 text-white"
               value={password}
-              onChange={(e) => setPassword(admin)}
+              onChange={(e) => setPassword(e.target.value)}
               required
             />
           </div>
