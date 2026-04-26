@@ -35,4 +35,26 @@ export const login = async (username, password) => {
   return response.data;
 };
 
+export const predictRisk = async (data) => {
+  const response = await api.post("/predict", data);
+  return response.data;
+};
+
+export const getHistory = async () => {
+  const response = await api.get("/history");
+  return response.data;
+};
+
+export const findHealthcare = async (lat, lng) => {
+  const response = await api.post("/find-healthcare", { lat, lng });
+  return response.data;
+};
+
+export const downloadReport = async (data) => {
+  const response = await api.post("/generate-report", data, {
+    responseType: "blob",
+  });
+  return response.data;
+};
+
 export default api;
